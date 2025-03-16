@@ -1,194 +1,231 @@
 #include <iostream>
-#include <cctype>
 #include <string>
-#include <algorithm>
+#include <cctype>
+
 using namespace std;
 
-// Function to check if input is a valid number (only digits, no spaces or symbols)
-bool isValidNumber(const string& input) {
-    return !input.empty() && all_of(input.begin(), input.end(), ::isdigit);
-}
-
-// Function to get a valid numeric input from the user
-double getValidNumberInput(const string& prompt) {
-    string input;
-    while (true) {
-        cout << prompt;
-        cin >> input;
-
-        if (!isValidNumber(input)) {
-            cout << "Invalid input! Please enter a valid number without spaces or symbols.\n";
-            continue;
-        }
-
-        return stod(input);
-    }
-}
-
-// Employee Base Class
+// Base class
 class Employee {
 protected:
-    string id;
-    string name;
+    string id, name;
+    double salary;
+
 public:
-    Employee(string id, string name) {
-        transform(id.begin(), id.end(), id.begin(), ::toupper); // Convert ID to uppercase
-        this->id = id;
-        this->name = name;
-    }
-    virtual void displaySalary() const = 0;
+    Employee(string emp_id, string emp_name, double emp_salary) : id(emp_id), name(emp_name), salary(emp_salary) {}
+
+    virtual double computeSalary() const = 0;
+    virtual void displayInfo() const = 0;
+
     string getID() const { return id; }
+
+    static string toUpperCase(string str) {
+        for (char &c : str) c = toupper(c);
+        return str;
+    }
+
     virtual ~Employee() {}
 };
 
 class FullTimeEmployee : public Employee {
-private:
-    double salary;
 public:
-    FullTimeEmployee(string id, string name, double salary) : Employee(id, name), salary(salary) {}
-    void displaySalary() const override {
-        cout << "Employee: " << name << " (ID: " << id << ")" << endl;
-        cout << "Fixed Monthly Salary: $" << salary << "\n" << endl;
+    FullTimeEmployee(string emp_id, string emp_name, double emp_salary)
+        : Employee(emp_id, emp_name, emp_salary) {}
+
+    double computeSalary() const override {
+        return salary;
+    }
+
+    void displayInfo() const override {
+        cout << "Employee: " << name << " (ID: " << id << ")\n";
+        cout << "Fixed Monthly Salary: $" << salary << "\n";
     }
 };
 
 class PartTimeEmployee : public Employee {
 private:
-    double hourlyWage;
     int hoursWorked;
+
 public:
-    PartTimeEmployee(string id, string name, double hourlyWage, int hoursWorked)
-        : Employee(id, name), hourlyWage(hourlyWage), hoursWorked(hoursWorked) {}
-    void displaySalary() const override {
-        cout << "Employee: " << name << " (ID: " << id << ")" << endl;
-        cout << "Hourly Wage: $" << hourlyWage << endl;
-        cout << "Hours Worked: " << hoursWorked << endl;
-        cout << "Total Salary: $" << (hourlyWage * hoursWorked) << "\n" << endl;
+    PartTimeEmployee(string emp_id, string emp_name, double hourlyWage, int hours)
+        : Employee(emp_id, emp_name, hourlyWage), hoursWorked(hours) {}
+
+    double computeSalary() const override {
+        return salary * hoursWorked;
+    }
+
+    void displayInfo() const override {
+        cout << "Employee: " << name << " (ID: " << id << ")\n";
+        cout << "Hourly Wage: $" << salary << "\n";
+        cout << "Hours Worked: " << hoursWorked << "\n";
+        cout << "Total Salary: $" << computeSalary() << "\n";
     }
 };
 
 class ContractualEmployee : public Employee {
 private:
-    double paymentPerProject;
     int projectsCompleted;
+
 public:
-    ContractualEmployee(string id, string name, double paymentPerProject, int projectsCompleted)
-        : Employee(id, name), paymentPerProject(paymentPerProject), projectsCompleted(projectsCompleted) {}
-    void displaySalary() const override {
-        cout << "Employee: " << name << " (ID: " << id << ")" << endl;
-        cout << "Contract Payment Per Project: $" << paymentPerProject << endl;
-        cout << "Projects Completed: " << projectsCompleted << endl;
-        cout << "Total Salary: $" << (paymentPerProject * projectsCompleted) << "\n" << endl;
+    ContractualEmployee(string emp_id, string emp_name, double emp_salary, int projects)
+        : Employee(emp_id, emp_name, emp_salary), projectsCompleted(projects) {}
+
+    double computeSalary() const override {
+        return salary * projectsCompleted;
+    }
+
+    void displayInfo() const override {
+        cout << "Employee: " << name << " (ID: " << id << ")\n";
+        cout << "Contract Payment Per Project: $" << salary << "\n";
+        cout << "Projects Completed: " << projectsCompleted << "\n";
+        cout << "Total Salary: $" << computeSalary() << "\n";
     }
 };
 
-const int MAX_EMPLOYEES = 100;
-Employee* employees[MAX_EMPLOYEES];
-int employeeCount = 0;
-
-bool isValidID(const string& input) {
-    return all_of(input.begin(), input.end(), ::isalnum);
-}
-
-bool isUniqueID(string id) {
-    transform(id.begin(), id.end(), id.begin(), ::toupper);
-    for (int i = 0; i < employeeCount; i++) {
-        string existingID = employees[i]->getID();
-        if (existingID == id) return false;
+bool isValidName(const string &name) {
+    if (name.empty()) return false;
+    if (!isalpha(name[0])) return false; // First character must be a letter
+    for (size_t i = 1; i < name.size(); i++) {
+        if (!isalpha(name[i]) && !(name[i] == ' ' && i + 1 < name.size() && isalpha(name[i + 1]))) {
+            return false;
+        }
     }
     return true;
 }
 
-bool isValidName(const string& name) {
-    return all_of(name.begin(), name.end(), [](char ch) { return isalpha(ch) || isspace(ch); }) && !name.empty();
-}
-
-void addEmployee(int type) {
-    string id, name;
-    double salary;
-    int hoursWorked, projectsCompleted;
-
-    do {
-        cout << "Enter ID: ";
-        cin >> id;
-        transform(id.begin(), id.end(), id.begin(), ::toupper); // Convert to uppercase
-        if (!isValidID(id) || !isUniqueID(id)) {
-            cout << "Invalid or Duplicate ID! Try again.\n";
-        }
-    } while (!isValidID(id) || !isUniqueID(id));
-
-    cin.ignore();
-    do {
-        cout << "Enter Name: ";
-        getline(cin, name);
-        if (!isValidName(name)) {
-            cout << "Invalid name! Only letters and spaces are allowed.\n";
-        }
-    } while (!isValidName(name));
-
-    if (type == 1) {
-        salary = getValidNumberInput("Enter Fixed Monthly Salary: ");
-        employees[employeeCount++] = new FullTimeEmployee(id, name, salary);
-    } else if (type == 2) {
-        salary = getValidNumberInput("Enter Hourly Wage: ");
-        hoursWorked = getValidNumberInput("Enter Hours Worked: ");
-        employees[employeeCount++] = new PartTimeEmployee(id, name, salary, hoursWorked);
-    } else if (type == 3) {
-        salary = getValidNumberInput("Enter Payment Per Project: ");
-        projectsCompleted = getValidNumberInput("Enter Projects Completed: ");
-        employees[employeeCount++] = new ContractualEmployee(id, name, salary, projectsCompleted);
-    }
-
-    cin.ignore(); // Prevents menu skipping issue after input
-}
-
-void displayPayrollReport() {
-    cout << "------ Employee Payroll Report ------\n";
-    for (int i = 0; i < employeeCount; i++) {
-        employees[i]->displaySalary();
-    }
-}
-
-bool isValidChoice(const string& input) {
-    return !input.empty() && input.find_first_not_of("0123456789") == string::npos && stoi(input) >= 1 && stoi(input) <= 5;
-}
-
-void menu() {
-    string choiceStr;
+int getValidMenuChoice(bool firstInput) {
+    string input;
     int choice;
-    while (true) {
-        cout << "\nMenu\n";
+    bool validInput = false; // Flag to control the loop
+
+    while (!validInput) { // Loop until a valid input is received
+        cout << "\nMenu:\n";
         cout << "1 - Full-time Employee\n";
         cout << "2 - Part-time Employee\n";
         cout << "3 - Contractual Employee\n";
         cout << "4 - Display Payroll Report\n";
         cout << "5 - Exit\n";
-        cout << "Enter choice: ";
-        getline(cin, choiceStr);
+        cout << "Enter your choice: ";
+        cin >> input;
 
-        if (!isValidChoice(choiceStr)) {
-            cout << "Invalid choice! Please enter a number between 1 and 5.\n";
-            continue;
-        }
+        if (input.length() == 1 && isdigit(input[0])) {
+            choice = input[0] - '0';
 
-        choice = stoi(choiceStr);
-        if (choice == 5) {
-            cout << "Exiting...\n";
-            break;
-        }
-
-        switch (choice) {
-            case 1: case 2: case 3: addEmployee(choice); break;
-            case 4: displayPayrollReport(); break;
-            default: break;
+            // If first input, only allow 1 or 5
+            if (firstInput && choice != 1 && choice != 5) {
+                cout << "Invalid input, please try again.\n";
+            } 
+            else if (choice >= 1 && choice <= 5) {
+                validInput = true; // Exit loop once a valid choice is made
+            } 
+            else {
+                cout << "Invalid input, please enter a number between 1 and 5.\n";
+            }
+        } 
+        else {
+            cout << "Invalid input, please enter a number between 1 and 5.\n";
         }
     }
+    
+    return choice;
+}
+
+
+bool isUniqueID(const string &id, Employee *employees[], int count) {
+    string upperID = Employee::toUpperCase(id);
+    for (int i = 0; i < count; i++) {
+        if (Employee::toUpperCase(employees[i]->getID()) == upperID) {
+            cout << "Duplicate ID!\n";
+            return false;
+        }
+    }
+    return true;
+}
+
+bool isValidSalary(const string &salary) {
+    if (salary.empty()) return false;
+    for (char c : salary) {
+        if (!isdigit(c) && c != '.') return false;
+    }
+    return stod(salary) > 0;
 }
 
 int main() {
-    menu();
-    for (int i = 0; i < employeeCount; i++) {
+    const int MAX_EMPLOYEES = 100;
+    Employee *employees[MAX_EMPLOYEES];
+    int empCount = 0;
+    bool running = true;
+    bool firstInput = false; // Flag to check if 1 was selected before
+
+    while (running) {
+        int choice = getValidMenuChoice(firstInput);
+
+        if (choice == 5) {
+            running = false;
+            continue;
+        }
+
+        if (choice == 4) {
+            cout << "------ Employee Payroll Report ------\n";
+            if (empCount == 0) {
+                cout << "No employees recorded.\n";
+            } else {
+                for (int i = 0; i < empCount; i++) {
+                    employees[i]->displayInfo();
+                    cout << "---------------------------------\n";
+                }
+            }
+            continue;
+        }
+
+        if (choice == 1) {
+            firstInput = true; // Lock input after selecting 1
+        }
+
+        string id, name, salaryStr;
+        double salary;
+        int hoursOrProjects;
+
+        cout << "Enter ID: ";
+        cin >> id;
+        if (!isUniqueID(id, employees, empCount)) continue;
+
+        cout << "Enter Name: ";
+        cin.ignore();
+        getline(cin, name);
+        if (!isValidName(name)) {
+            cout << "Invalid name! Try again.\n";
+            continue;
+        }
+
+        cout << "Enter Salary: ";
+        cin >> salaryStr;
+        if (!isValidSalary(salaryStr)) {
+            cout << "Invalid salary! Try again.\n";
+            continue;
+        }
+        salary = stod(salaryStr);
+
+        if (choice == 2 || choice == 3) {
+            cout << "Enter " << (choice == 2 ? "Hours Worked" : "Number of Projects") << ": ";
+            cin >> hoursOrProjects;
+            if (hoursOrProjects <= 0) {
+                cout << "Invalid input! Must be a positive number.\n";
+                continue;
+            }
+        }
+
+        if (choice == 1) {
+            employees[empCount++] = new FullTimeEmployee(id, name, salary);
+        } else if (choice == 2) {
+            employees[empCount++] = new PartTimeEmployee(id, name, salary, hoursOrProjects);
+        } else if (choice == 3) {
+            employees[empCount++] = new ContractualEmployee(id, name, salary, hoursOrProjects);
+        }
+    }
+
+    for (int i = 0; i < empCount; i++) {
         delete employees[i];
     }
+
     return 0;
 }
