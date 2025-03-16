@@ -95,9 +95,9 @@ bool isValidName(const string &name) {
 int getValidMenuChoice(bool firstInput) {
     string input;
     int choice;
-    bool validInput = false; // Flag to control the loop
+    bool validInput = false;
 
-    while (!validInput) { // Loop until a valid input is received
+    while (!validInput) {
         cout << "\nMenu:\n";
         cout << "1 - Full-time Employee\n";
         cout << "2 - Part-time Employee\n";
@@ -110,12 +110,12 @@ int getValidMenuChoice(bool firstInput) {
         if (input.length() == 1 && isdigit(input[0])) {
             choice = input[0] - '0';
 
-            // If first input, only allow 1 or 5
+            // Allow 1 or 5 only if it's the first input
             if (firstInput && choice != 1 && choice != 5) {
                 cout << "Invalid input, please try again.\n";
             } 
             else if (choice >= 1 && choice <= 5) {
-                validInput = true; // Exit loop once a valid choice is made
+                validInput = true;
             } 
             else {
                 cout << "Invalid input, please enter a number between 1 and 5.\n";
@@ -128,7 +128,6 @@ int getValidMenuChoice(bool firstInput) {
     
     return choice;
 }
-
 
 bool isUniqueID(const string &id, Employee *employees[], int count) {
     string upperID = Employee::toUpperCase(id);
@@ -154,7 +153,7 @@ int main() {
     Employee *employees[MAX_EMPLOYEES];
     int empCount = 0;
     bool running = true;
-    bool firstInput = false; // Flag to check if 1 was selected before
+    bool firstInput = true; // Ensure 1 or 5 is selected first
 
     while (running) {
         int choice = getValidMenuChoice(firstInput);
@@ -178,7 +177,7 @@ int main() {
         }
 
         if (choice == 1) {
-            firstInput = true; // Lock input after selecting 1
+            firstInput = false; // Allow all menu choices after selecting 1
         }
 
         string id, name, salaryStr;
